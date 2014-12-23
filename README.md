@@ -14,6 +14,26 @@ This script is to be run via cron every N minutes:
     */20 * * * * /path/to/command --process
     */30 * * * * /path/to/command --upload
 
+# Usage
+
+``
+Usage: logpipe [options]
+
+Options:
+    -m,   --move      Prepare/stage files for processing
+    -p,   --process   Execute process script in parallel
+    -u,   --upload    Upload files to S3 bucket
+``
+
+All the magic happens in `lib/process.sh`. The included script filters out
+lines in logs (hits) that are from Googlebot. The `process.sh` script is
+executed concurrently on logs in `${stage3}` with the number of jobs scaling
+to the number of available cores via
+[GNU parallel](http://www.gnu.org/software/parallel/)'s existing feature set.
+
+Using this simple mechanism, it's also possible to farm out work to remote
+machines to distribute batch processing.
+
 # Installation
 ## Install Dependencies
 
@@ -38,13 +58,3 @@ provider to arrive in the `${stage1}` directory.
 The default installation path is `/usr/local/`
 
     sudo ./install.sh
-
-# Usage
-All the magic happens in `lib/process.sh`. The included script filters out
-lines in logs (hits) that are from Googlebot. The `process.sh` script is
-executed concurrently on logs in `${stage3}` with the number of jobs scaling
-to the number of available cores via
-[GNU parallel](http://www.gnu.org/software/parallel/)'s existing feature set.
-
-Using this simple mechanism, it's also possible to farm out work to remote
-machines to distribute batch processing.

@@ -11,8 +11,8 @@ function exit_with_usage() {
     echo "Usage: ${0##*/} [options]
 
 Options:
-    -m,   --move      Prepare files for processing
-    -p,   --process   Perform processing
+    -m,   --move      Prepare/stage files for processing
+    -p,   --process   Execute process script in parallel 
     -u,   --upload    Upload files to AWS S3 bucket" >&2
 
     exit 1
