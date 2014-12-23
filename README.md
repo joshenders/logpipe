@@ -16,14 +16,14 @@ This script is to be run via cron every N minutes:
 
 # Usage
 
-``
+```
 Usage: logpipe [options]
 
 Options:
     -m,   --move      Prepare/stage files for processing
     -p,   --process   Execute process script in parallel
     -u,   --upload    Upload files to S3 bucket
-``
+```
 
 All the magic happens in `lib/process.sh`. The included script filters out
 lines in logs (hits) that are from Googlebot. The `process.sh` script is
