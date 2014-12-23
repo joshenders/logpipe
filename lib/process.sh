@@ -19,8 +19,7 @@ is_open="$(fuser --silent ${file}; echo $?)" # fuser returns 1 if is_closed
 if [[ "${is_open}" != "0" ]]; then
     stage4_file="${stage4}/${file##*/}"
 
-    # Filter to reduce size of stored data. Fuzzy matching is acceptable by
-    # assignee.
+    # Filter to reduce size of stored data. Fuzzy matching is acceptable
     #
     # Valid Googlebot cidr: 66.249.64.0/19
     # https://support.google.com/webmasters/answer/80553?hl=en

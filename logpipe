@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ETL pipeline for Akamai log delivery services. Moves and processes log files
+# ETL pipeline for CDN log delivery services. Moves and processes log files
 # along a 4-stage ETL pipeline.
 #
 #    stage1-incoming   - incoming files from akamai
