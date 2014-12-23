@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# ETL pipeline for Akamai log delivery services. Moves and processes log files
+# along a 4-stage ETL pipeline.
+#
+#    stage1-incoming   - incoming files from akamai
+#    stage2-holding    - candidates for stage3
+#    stage3-processing - files ready for processing
+#    stage4-outgoing   - files ready to be uploaded to S3
+#
+# This script is to be run via cron every N minutes:
+#
+#    */10 * * * * /path/to/command --move
+#    */20 * * * * /path/to/command --process
+#    */30 * * * * /path/to/command --upload
+#
+# Josh Enders <josh.enders@gmail.com>
+
+# Enable null globbing behavior. When unset, glob pattern * falls back to
+# literal '*' if no match, instead of an empty string
+shopt -s nullglob
+
+source "/usr/local/lib/logpipe/environment.sh"
+source "/usr/local/lib/logpipe/functions.sh"
+
+if [[ "$#" != "1" ]]; then
+    exit_with_usage
+fi
+
+case "$1" in
+    -m|--move)
+        this_stage="${stage1}"
+        get_glob
+        move
+    ;;
+    -p|--process)
+        this_stage="${stage3}"
+        get_glob
+        process
+    ;;
+    -u|--upload)
+        this_stage="${stage4}"
+        get_glob
+        upload
+    ;;
+    *)
+        exit_with_usage
+    ;;
+esac
