@@ -27,6 +27,9 @@ if [[ "$#" != "1" ]]; then
     exit_with_usage
 fi
 
+# only run one instance at a time
+lock $mnt/$(basename $0) || exit
+
 case "$1" in
     -m|--move)
         this_stage="${stage1}"

@@ -12,11 +12,25 @@ function exit_with_usage() {
 
 Options:
     -m,   --move      Prepare/stage files for processing
-    -p,   --process   Execute process script in parallel 
+    -p,   --process   Execute process script in parallel
     -u,   --upload    Upload files to AWS S3 bucket" >&2
 
     exit 1
 
+}
+
+# create the lockfile
+function lock () {
+	lockfile-create -r 0 $1 || return 1
+	lockfile-touch $1 &
+	LOCK_PID=$!
+	trap "unlock $1" 1 2 3 4 5 6 7 8 11 13 14 15
+}
+
+# clean up the lockfile
+function unlock () {
+	kill $LOCK_PID
+	lockfile-remove $1
 }
 
 function get_glob() {
