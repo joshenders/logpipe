@@ -3,10 +3,10 @@
 ETL pipeline for CDN log delivery services. Moves and processes log files
 along a 4-stage ETL pipeline:
 
-    stage1-incoming   - incoming files from akamai
+    stage1-incoming   - incoming files from CDN vendor
     stage2-holding    - candidates for stage3
     stage3-processing - files ready for processing
-    stage4-outgoing   - files ready to be uploaded to S3
+    stage4-outgoing   - files ready to be uploaded to AWS S3
 
 This script is to be run via cron every N minutes:
 
@@ -39,7 +39,7 @@ The default installation path is `/usr/local/`
 
     sudo ./install.sh
 
-## Usage
+# Usage
 All the magic happens in `lib/process.sh`. The included script filters out
 lines in logs (hits) that are from Googlebot. The `process.sh` script is
 executed concurrently on logs in `${stage3}` with the number of jobs scaling
