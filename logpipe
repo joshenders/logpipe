@@ -16,12 +16,19 @@
 #
 # Josh Enders <josh.enders@gmail.com>
 
+# Shell options cannot be exported and must be redefined in any subshells
+# (excluding sourced shell excerpts)
+
 # Enable null globbing behavior. When unset, glob pattern * falls back to
 # literal '*' if no match, instead of an empty string
 shopt -s nullglob
 
-source "/usr/local/lib/logpipe/environment.sh"
-source "/usr/local/lib/logpipe/functions.sh"
+# Default installation path (macro)
+export DEFAULT_PREFIX="__DEFAULT_PREFIX__"
+export DEFAULT_LIB_PATH="__DEFAULT_LIB_PATH__"
+
+source "${DEFAULT_LIB_PATH}/environment.sh"
+source "${DEFAULT_LIB_PATH}/functions.sh"
 
 if [[ "$#" != "1" ]]; then
     exit_with_usage

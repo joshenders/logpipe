@@ -2,15 +2,28 @@
 
 PROGNAME="logpipe"
 
-# If you change this path, you will also need to adjust hardcoded paths to this
-# location within the scripts themselves
 DEFAULT_PREFIX="/usr/local"
 DEFAULT_SBIN_PATH="${DEFAULT_PREFIX}/sbin"
 DEFAULT_LIB_PATH="${DEFAULT_PREFIX}/lib/${PROGNAME}"
+DEFAULT_FILTER_PATH="${DEFAULT_PREFIX}/lib/${PROGNAME}/filters"
 
-test ! -e "${DEFAULT_PREFIX}" && mkdir --parents --verbose "${DEFAULT_PREFIX}"
-test ! -e "${DEFAULT_LIB_PATH}" && mkdir --parents --verbose "${DEFAULT_LIB_PATH}"
-test ! -e "${DEFAULT_SBIN_PATH}" && mkdir --parents --verbose "${DEFAULT_SBIN_PATH}"
+DEFAULTS=(
+    ${DEFAULT_SBIN_PATH}
+    ${DEFAULT_LIB_PATH}
+    ${DEFAULT_FILTER_PATH}
+)
 
-cp --recursive --verbose lib/* "${DEFAULT_LIB_PATH}"
+
+for dir in ${DEFAULTS}; do
+    # create dirs if they don't already exist
+    if [[ ! -e ${dir} ]]; then
+        mkdir --parents --verbose ${dir}
+    fi
+done
+
+sed --in-place --expression="s/__DEFAULT_PREFIX__/${DEFAULT_PREFIX}/g" ${PROGNAME}
+sed --in-place --expression="s/__DEFAULT_LIB_PATH__/${DEFAULT_LIB_PATH}/g" ${PROGNAME}
+
 cp --verbose "${PROGNAME}" "${DEFAULT_SBIN_PATH}"
+cp --recursive --verbose lib/* "${DEFAULT_LIB_PATH}"
+cp --recursive --verbose filters/* "${DEFAULT_FILTER_PATH}"
