@@ -63,7 +63,7 @@ function get_glob() {
         if [[ "${this_mtime}" == "${next_mtime}" ]]; then
             # Successful glob of all files in current stage
             break
-        elif [[ "${limit}" -le 1 ]]; then
+        elif [[ "${limit}" -eq 0 ]]; then
             exit_with_error
         else
             local limit="$((limit-1))"
