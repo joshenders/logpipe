@@ -1,3 +1,20 @@
+function is_open() {
+    # usage: is_open file
+
+    local file="$1"
+
+    # fuser returns 1 if is_closed
+    fuser --silent "${file}"
+    echo "$?"
+}
+
+function get_mtime() {
+    # usage: get_mtime file
+
+    local file="$1"
+    stat --format=%Y "${file}"
+}
+
 function exit_with_error() {
     # usage: exit_with_error "error message"
 
@@ -30,7 +47,7 @@ function get_glob() {
     fi
 
     # seed
-    local next_mtime="$(stat --format=%Y ${this_stage})"
+    local next_mtime="$(get_mtime ${this_stage})"
 
     # as a precaution
     local limit=60
@@ -39,7 +56,7 @@ function get_glob() {
     while true; do
         local this_mtime="${next_mtime}"
         glob=(${this_stage}/*)
-        local next_mtime="$(stat --format=%Y ${this_stage})"
+        local next_mtime="$(get_mtime ${this_stage})"
 
         if [[ "${this_mtime}" == "${next_mtime}" ]]; then
             # Successful glob of all files in current stage
@@ -53,6 +70,8 @@ function get_glob() {
     done
 }
 
+
+
 function move() {
     # usage: move
 
@@ -64,7 +83,7 @@ function move() {
         mv "${file}" "${stage2}"
 
         local stage2_file="${stage2}/${file##*/}"
-        local is_open="$(fuser --silent ${stage2_file}; echo $?)" # fuser returns 1 if is_closed
+        local is_open="$(is_open ${stage2_file})"
 
         if [[ "${is_open}" == 0 ]]; then
             # move back to stage1 for the next run, a process still has an open
@@ -91,7 +110,7 @@ function upload() {
 
     # Upload
     for file in "${glob[@]}"; do
-        local is_open="$(fuser --silent ${file}; echo $?)" # fuser returns 1 if is_closed
+        local is_open="$(is_open ${file})"
 
         # BUG: s3cmd doesn't actually return 1 on failure
         # Upload unless file is open
