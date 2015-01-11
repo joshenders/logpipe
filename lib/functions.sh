@@ -26,7 +26,7 @@ function get_glob() {
     glob=(${this_stage}/*)
 
     # if this_stage is empty, no need to continue
-    if [[ "${#glob[@]}" == "0" ]]; then
+    if [[ "${#glob[@]}" == 0 ]]; then
         exit 0
     fi
 
@@ -34,7 +34,7 @@ function get_glob() {
     local next_mtime="$(stat --format=%Y ${this_stage})"
 
     # as a precaution
-    local limit="60"
+    local limit=60
 
     # Capture file glob in an mtime "transaction".
     while true; do
@@ -45,7 +45,7 @@ function get_glob() {
         if [[ "${this_mtime}" == "${next_mtime}" ]]; then
             # Successful glob of all files in current stage
             break
-        elif [[ "${limit}" -le "1" ]]; then
+        elif [[ "${limit}" -le 1 ]]; then
             exit_with_error
         else
             local limit="$((limit-1))"
@@ -65,7 +65,7 @@ function move() {
         local stage2_file="${stage2}/${file##*/}"
         local is_open="$(fuser --silent ${stage2_file}; echo $?)" # fuser returns 1 if is_closed
 
-        if [[ "${is_open}" == "0" ]]; then
+        if [[ "${is_open}" == 0 ]]; then
             # move back to stage1 for the next run, a process still has an open
             # handle on the file
             mv "${stage2_file}" "${stage1}"
@@ -92,7 +92,7 @@ function upload() {
 
         # BUG: s3cmd doesn't actually return 1 on failure
         # Upload unless file is open
-        if [[ "${is_open}" != "0" ]]; then
+        if [[ "${is_open}" != 0 ]]; then
             s3cmd \
                 --reduced-redundancy \
                 --quiet \

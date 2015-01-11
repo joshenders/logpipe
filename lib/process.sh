@@ -7,7 +7,7 @@ shopt -s nullglob
 source "/usr/local/lib/logpipe/environment.sh"
 source "/usr/local/lib/logpipe/functions.sh"
 
-if [[ "$#" != "1" ]]; then
+if [[ "$#" != 1 ]]; then
     exit_with_error "Missing arguments to operate on"
 fi
 
@@ -16,7 +16,7 @@ file="$1"
 is_open="$(fuser --silent ${file}; echo $?)" # fuser returns 1 if is_closed
 
 # skip if file is open
-if [[ "${is_open}" != "0" ]]; then
+if [[ "${is_open}" != 0 ]]; then
     stage4_file="${stage4}/${file##*/}"
 
     # Filter to reduce size of stored data. Fuzzy matching is acceptable
@@ -43,7 +43,7 @@ if [[ "${is_open}" != "0" ]]; then
     lines="$(wc --lines ${stage4_file})"
 
     # Remove stage4_file if zero lines
-    if [[ "${lines%%\ *}" == "0" ]]; then
+    if [[ "${lines%%\ *}" == 0 ]]; then
         rm ${stage4_file}
     fi
 fi

@@ -30,7 +30,7 @@ export DEFAULT_LIB_PATH="__DEFAULT_LIB_PATH__"
 source "${DEFAULT_LIB_PATH}/environment.sh"
 source "${DEFAULT_LIB_PATH}/functions.sh"
 
-if [[ "$#" != "1" ]]; then
+if [[ "$#" != 1 ]]; then
     exit_with_usage
 fi
 
