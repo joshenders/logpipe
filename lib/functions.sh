@@ -16,7 +16,6 @@ Options:
     -u,   --upload    Upload files to AWS S3 bucket" >&2
 
     exit 1
-
 }
 
 function get_glob() {
@@ -57,6 +56,8 @@ function get_glob() {
 function move() {
     # usage: move
 
+    local file=""
+
     for file in "${glob[@]}"; do
         # Move first and ask questions later
         # -- http://unix.stackexchange.com/questions/164577/
@@ -85,6 +86,8 @@ function process() {
 
 function upload() {
     # usage: upload
+
+    local file=""
 
     # Upload
     for file in "${glob[@]}"; do
