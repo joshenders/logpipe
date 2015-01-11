@@ -38,6 +38,8 @@ Options:
 function get_glob() {
     # usage: get_glob
 
+    local this_stage="$1"
+
     # global globbal
     glob=(${this_stage}/*)
 
@@ -69,8 +71,6 @@ function get_glob() {
         # Directory was modified added after we globbed, try again
     done
 }
-
-
 
 function move() {
     # usage: move
