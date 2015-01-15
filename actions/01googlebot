@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Filter requests from Google crawlers. Fuzzy matching is acceptable
+
+if [[ "$#" != 1 ]]; then
+    exit_with_error "No arguments passed to $0"
+fi
+
+function main() {
+    local file="$1"
+    local is_open="$(is_open ${file})"
+
+    # skip if file is open
+    if [[ "${is_open}" != 0 ]]; then
+        local stage4_file="${STAGE4}/${0##*/[0-9][0-9]}-${file##*/}"
+
+        # Valid Googlebot cidr: 66.249.64.0/19
+        # https://support.google.com/webmasters/answer/80553?hl=en
+        #
+        # Valid User-Agent strings contain 'Google'
+        # https://support.google.com/webmasters/answer/1061943
+        #
+        # KLUDGE: redirect gzip stderr (zgrep calls gzip --decompress) to fix
+        # "unexpected end of file" warnings for files with no matching lines
+
+        zgrep --no-messages 2>/dev/null '^66\.249' "${file}" | \
+            grep --no-messages 'Google' 2>/dev/null | \
+                gzip --quiet 2>/dev/null > "${stage4_file}"
+
+        local size="$(stat --printf='%s' ${stage4_file})"
+
+        # Remove stage4_file if empty (20 byte gzip header)
+        if [[ "${size}" == 20 ]]; then
+            rm "${stage4_file}"
+        fi
+    fi
+}
+
+main "$@"

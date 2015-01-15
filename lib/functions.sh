@@ -1,5 +1,5 @@
 function is_open() {
-    # usage: is_open file
+    # usage: is_open "file"
 
     local file="$1"
 
@@ -9,7 +9,7 @@ function is_open() {
 }
 
 function get_mtime() {
-    # usage: get_mtime file
+    # usage: get_mtime "file"
 
     local file="$1"
     stat --format=%Y "${file}"
@@ -28,45 +28,48 @@ function exit_with_usage() {
     echo "Usage: ${0##*/} [options]
 
 Options:
-    -m,   --move      Prepare/stage files for processing
-    -p,   --process   Execute process script in parallel 
-    -u,   --upload    Upload files to AWS S3 bucket" >&2
+    -h,   --help      Display this help and exit
+    -m,   --move      Prepare raw files for processing
+    -p,   --process   Execute actions
+    -u,   --upload    Upload cooked files to Amazon S3" >&2
 
     exit 1
 }
 
 function get_glob() {
-    # usage: get_glob
+    # usage: get_glob "dir"
 
-    local this_stage="$1"
+    local dir="$1"
 
-    # global globbal
-    glob=(${this_stage}/*)
+    # global globbal :D
+    GLOB=(${dir}/*)
 
-    # if this_stage is empty, no need to continue
-    if [[ "${#glob[@]}" == 0 ]]; then
+    # if dir is empty, no need to continue
+    if [[ "${#GLOB[@]}" == 0 ]]; then
         exit 0
     fi
 
     # seed
-    local next_mtime="$(get_mtime ${this_stage})"
+    local next_mtime="$(get_mtime ${dir})"
+    local this_mtime=''
 
     # as a precaution
     local limit=60
 
     # Capture file glob in an mtime "transaction".
     while true; do
-        local this_mtime="${next_mtime}"
-        glob=(${this_stage}/*)
-        local next_mtime="$(get_mtime ${this_stage})"
+        this_mtime="${next_mtime}"
+        GLOB=(${dir}/*)
+        next_mtime="$(get_mtime ${dir})"
 
         if [[ "${this_mtime}" == "${next_mtime}" ]]; then
-            # Successful glob of all files in current stage
+            # Successful glob of all files in directory
             break
-        elif [[ "${limit}" -eq 0 ]]; then
-            exit_with_error
+        elif [[ "${limit}" == 0 ]]; then
+            exit_with_error "Unable to capture file glob after 60+ seconds" 
         else
-            local limit="$((limit-1))"
+            limit="$((limit-1))"
+            sleep 1
         fi
         # Directory was modified added after we globbed, try again
     done
@@ -75,23 +78,29 @@ function get_glob() {
 function move() {
     # usage: move
 
-    local file=""
+    local file=''
+    local stage2_file=''
+    local is_open=''
 
-    for file in "${glob[@]}"; do
-        # Move first and ask questions later
-        # -- http://unix.stackexchange.com/questions/164577/
-        mv "${file}" "${stage2}"
+    # We move the file BEFORE we check to see if it's open to avoid the race
+    # condition of the file being opening AFTER we check to see if its open
+    # but BEFORE we move it. It is safe to move a file that is open, and this
+    # drastically simplifies the algorithm.
+    # -- http://unix.stackexchange.com/questions/164577/
 
-        local stage2_file="${stage2}/${file##*/}"
-        local is_open="$(is_open ${stage2_file})"
+    for file in "${GLOB[@]}"; do
+        mv "${file}" "${STAGE2}"
+
+        stage2_file="${STAGE2}/${file##*/}"
+        is_open="$(is_open ${stage2_file})"
 
         if [[ "${is_open}" == 0 ]]; then
             # move back to stage1 for the next run, a process still has an open
             # handle on the file
-            mv "${stage2_file}" "${stage1}"
+            mv "${stage2_file}" "${STAGE1}"
         else
             # no longer open, move to the next stage
-            mv "${stage2_file}" "${stage3}"
+            mv "${stage2_file}" "${STAGE3}"
         fi
     done
 }
@@ -99,26 +108,38 @@ function move() {
 function process() {
     # usage: process
 
-    # FEATURE: coproc in the future?
-    parallel --gnu 'process.sh {}' ::: "${glob[@]}"
+#    local outfile='/srv/logpipe/stage3_size.csv'
+#    local timestamp="$(date --utc +%s)"
+#    local size="$(du --bytes ${STAGE3} | awk '{ print $1 }')"
+#    echo "${timestamp},${size}" >> "${outfile}"
+
+    local action=''
+    local actions=($(ls -v "${ACTION_PATH}"/[0-9]*)) # natural sort order
+
+    for action in "${actions[@]}"; do
+        parallel --gnu "${action} '{}'" ::: "${GLOB[@]}"
+    done
 }
 
 function upload() {
     # usage: upload
 
-    local file=""
+    local file=''
+    local is_open=''
 
     # Upload
-    for file in "${glob[@]}"; do
-        local is_open="$(is_open ${file})"
+    for file in "${GLOB[@]}"; do
+        is_open="$(is_open ${file})"
 
-        # BUG: s3cmd doesn't actually return 1 on failure
         # Upload unless file is open
         if [[ "${is_open}" != 0 ]]; then
+            # BUG: s3cmd doesn't actually return 1 on failure, will always
+            # delete file even if transfer was unsuccessful.
+            # -- https://github.com/s3tools/s3cmd/issues/262
             s3cmd \
                 --reduced-redundancy \
                 --quiet \
-                put "${file}" "${s3_bucket}" && \
+                put "${file}" "${S3_URI}" && \
                     rm "${file}"
         fi
     done

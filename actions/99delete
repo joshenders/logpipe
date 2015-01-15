@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Removes raw files from stage3. Can be referred to as a template for actions.
+
+if [[ "$#" != 1 ]]; then
+    exit_with_error "No arguments passed to $0"
+fi
+
+function main() {
+    local file="$1"
+    local is_open="$(is_open ${file})"
+
+    # skip if file is open
+    if [[ "${is_open}" != 0 ]]; then
+        # Filtering commands would typically go here
+        rm "${file}"
+    fi
+}
+
+main "$@"

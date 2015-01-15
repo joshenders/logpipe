@@ -1,56 +1,69 @@
 #!/bin/bash
 
-# ETL pipeline for CDN log delivery services. Moves and processes log files
-# along a 4-stage ETL pipeline.
+# Logpipe is a utility for managing a batch processing pipeline.
 #
-#    stage1-incoming   - incoming files from akamai
-#    stage2-holding    - candidates for stage3
-#    stage3-processing - files ready for processing
-#    stage4-outgoing   - files ready to be uploaded to S3
+# With repeated execution via cron, files flow through the following 4-stages:
 #
-# This script is to be run via cron every N minutes:
+#     stage1-incoming   - incoming raw files
+#     stage2-holding    - candidates awaiting validation for stage3
+#     stage3-processing - raw files awaiting processing
+#     stage4-outgoing   - cooked files awaiting transport to S3
 #
-#    */10 * * * * /path/to/command --move
-#    */20 * * * * /path/to/command --process
-#    */30 * * * * /path/to/command --upload
+# Actions executed in the processing stage can be written in any language and
+# are executed using GNU parallel.
 #
-# Josh Enders <josh.enders@gmail.com>
-
-# Shell options cannot be exported and must be redefined in any subshells
-# (excluding sourced shell excerpts)
+# The final stage of the pipeline uploads the processed output to Amazon S3 via
+# s3cmd.
+#
+# Logpipe is written in Bash and makes use of non-portable shell features.
+#
+#   Josh Enders <josh.enders@gmail.com>
 
 # Enable null globbing behavior. When unset, glob pattern * falls back to
 # literal '*' if no match, instead of an empty string
+#
+# Shell options cannot be exported and must be redefined in any subshells
+# (excluding sourced shell fragments)
 shopt -s nullglob
 
-# Default installation path (macro)
-export DEFAULT_PREFIX="__DEFAULT_PREFIX__"
-export DEFAULT_LIB_PATH="__DEFAULT_LIB_PATH__"
+# Defined during installation
+export LIB_PATH='__LIB_PATH__'
 
-source "${DEFAULT_LIB_PATH}/environment.sh"
-source "${DEFAULT_LIB_PATH}/functions.sh"
+# Set as readonly
+readonly LIB_PATH
 
-if [[ "$#" != 1 ]]; then
-    exit_with_usage
-fi
+source "${LIB_PATH}/environment.sh"
+source "${LIB_PATH}/functions.sh"
 
-case "$1" in
-    -m|--move)
-        this_stage="${stage1}"
-        get_glob
-        move
-    ;;
-    -p|--process)
-        this_stage="${stage3}"
-        get_glob
-        process
-    ;;
-    -u|--upload)
-        this_stage="${stage4}"
-        get_glob
-        upload
-    ;;
-    *)
+# Export functions to child shells (mainly used by process substitution)
+for func in $(declare -f | awk '/^[a-z]/ { print $1 }'); do
+    export -f "${func}"
+done
+
+unset func
+
+function main() {
+    if [[ "$#" != 1 ]]; then
         exit_with_usage
-    ;;
-esac
+    fi
+
+    case "$1" in
+        -m|--move)
+            get_glob "${STAGE1}"
+            move
+        ;;
+        -p|--process)
+            get_glob "${STAGE3}"
+            process
+        ;;
+        -u|--upload)
+            get_glob "${STAGE4}"
+            upload
+        ;;
+        *)
+            exit_with_usage
+        ;;
+    esac
+}
+
+main "$@"

@@ -1,29 +1,58 @@
 #!/bin/bash
 
-PROGNAME="logpipe"
+PROGNAME='logpipe'
 
-DEFAULT_PREFIX="/usr/local"
-DEFAULT_SBIN_PATH="${DEFAULT_PREFIX}/sbin"
-DEFAULT_LIB_PATH="${DEFAULT_PREFIX}/lib/${PROGNAME}"
-DEFAULT_FILTER_PATH="${DEFAULT_PREFIX}/lib/${PROGNAME}/filters"
+# --- User configuration below this line ---
+
+# Must conform to s3://BUCKET
+S3_URI="${S3_URI:?'S3_URI has not been set'}"
+
+# Files to be processed should be created in ${STAGE_PREFIX}/stage1-incoming
+STAGE_PREFIX="${STAGE_PREFIX:?'STAGE_PREFIX has not been set'}"
+
+# Install to custom location with PREFIX=/my/custom/path ./install.sh
+PREFIX="${PREFIX:-/usr/local}"
+
+# --- User configuration above this line ---
+
+SBIN_PATH="${PREFIX}/sbin"
+LIB_PATH="${PREFIX}/lib/${PROGNAME}/lib"
+ACTION_PATH="${PREFIX}/lib/${PROGNAME}/actions"
 
 DEFAULTS=(
-    ${DEFAULT_SBIN_PATH}
-    ${DEFAULT_LIB_PATH}
-    ${DEFAULT_FILTER_PATH}
+    "${SBIN_PATH}"
+    "${LIB_PATH}"
+    "${ACTION_PATH}"
+    "${STAGE_PREFIX}/stage1-incoming"
+    "${STAGE_PREFIX}/stage2-holding"
+    "${STAGE_PREFIX}/stage3-processing"
+    "${STAGE_PREFIX}/stage4-outgoing"
 )
 
-
-for dir in ${DEFAULTS}; do
-    # create dirs if they don't already exist
-    if [[ ! -e ${dir} ]]; then
-        mkdir --parents --verbose ${dir}
+# Create dirs if they don't already exist
+for dir in "${DEFAULTS[@]}"; do
+    if [[ ! -e "${dir}" ]]; then
+        mkdir --parents --verbose "${dir}"
     fi
 done
 
-sed --in-place --expression="s/__DEFAULT_PREFIX__/${DEFAULT_PREFIX}/g" ${PROGNAME}
-sed --in-place --expression="s/__DEFAULT_LIB_PATH__/${DEFAULT_LIB_PATH}/g" ${PROGNAME}
+# Install
+cp --verbose "${PROGNAME}" "${SBIN_PATH}"
+cp --recursive --verbose ./lib/* "${LIB_PATH}"
+cp --recursive --verbose ./actions/* "${ACTION_PATH}"
 
-cp --verbose "${PROGNAME}" "${DEFAULT_SBIN_PATH}"
-cp --recursive --verbose lib/* "${DEFAULT_LIB_PATH}"
-cp --recursive --verbose filters/* "${DEFAULT_FILTER_PATH}"
+# Macro replacements AFTER copy to allow for reconfiguration/reinstallation
+
+# logpipe
+sed --in-place --expression="s!__PREFIX__!${PREFIX}!g" "${SBIN_PATH}/${PROGNAME}"
+sed --in-place --expression="s!__LIB_PATH__!${LIB_PATH}!g" "${SBIN_PATH}/${PROGNAME}"
+
+# environment.sh
+sed --in-place --expression="s!__ACTION_PATH__!${ACTION_PATH}!g" "${LIB_PATH}/environment.sh"
+sed --in-place --expression="s!__STAGE_PREFIX__!${STAGE_PREFIX}!g" "${LIB_PATH}/environment.sh"
+sed --in-place --expression="s!__S3_URI__!${S3_URI}!g" "${LIB_PATH}/environment.sh"
+
+# actions/
+for file in "${ACTION_PATH}"/*; do
+    sed --in-place --expression="s!__LIB_PATH__!${LIB_PATH}!g" "${file}"
+done

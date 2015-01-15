@@ -1,60 +1,79 @@
-# logpipe
+# Logpipe
 ## About
-ETL pipeline for CDN log delivery services. Moves and processes log files
-along a 4-stage ETL pipeline:
 
-    stage1-incoming   - incoming files from CDN vendor
-    stage2-holding    - candidates for stage3
-    stage3-processing - files ready for processing
-    stage4-outgoing   - files ready to be uploaded to AWS S3
+Logpipe is a utility for managing a batch processing pipeline.
 
-This script is to be run via cron every N minutes:
+With repeated execution via cron, files flow through the following 4-stages:
 
-    */10 * * * * /path/to/command --move
-    */20 * * * * /path/to/command --process
-    */30 * * * * /path/to/command --upload
+    stage1-incoming   - incoming raw files
+    stage2-holding    - candidates awaiting validation for stage3
+    stage3-processing - raw files awaiting processing
+    stage4-outgoing   - cooked files awaiting transport to S3
 
-# Usage
+Actions executed in the processing stage can be written in any language and are
+executed using [GNU parallel](http://www.gnu.org/software/parallel/).
 
-```
-Usage: logpipe [options]
+The final stage of the pipeline uploads the processed (cooked) output to
+[Amazon S3](http://aws.amazon.com/s3/) via [s3cmd](http://s3tools.org/s3cmd).
 
-Options:
-    -m,   --move      Prepare/stage files for processing
-    -p,   --process   Execute process script in parallel
-    -u,   --upload    Upload files to S3 bucket
-```
+Logpipe is written in Bash and makes use of non-portable shell features.
 
-All the magic happens in `lib/process.sh`. The included script filters out
-lines in logs (hits) that are from Googlebot. The `process.sh` script is
-executed concurrently on logs in `${stage3}` with the number of jobs scaling
-to the number of available cores via
-[GNU parallel](http://www.gnu.org/software/parallel/)'s existing feature set.
+There is an intentional lack of error handling in logpipe. Unexpected ouput
+will generate an email from the cron daemon.
 
-Using this simple mechanism, it's also possible to farm out work to remote
-machines to distribute batch processing.
+### Actions
+
+Actions are executable programs called directly by logpipe via GNU parallel.
+
+Individual files in stage3 are distributed as command line arguments to
+processes created by GNU parallel. The number of concurrent jobs will scale to
+the number of available CPU cores. Although unimplemented, a minor modification
+allows distribution of jobs to networked machines accessible via ssh.
+
+Actions will be executed in natural sort order against the files in stage3.
+Output files should be created in the path pointed to by the STAGE4 environment
+variable which is inherited by action processes. Global variables are defined
+in `environment.sh`
+
+A final action, `99delete` removes files from stage3 and should be the last
+action that is executed. It can be referred to as a template for writing your
+own actions but should be left in place to ensure files are removed properly.
+Actions should depend on this behavior and not remove or otherwise modify files
+themselves.
+
+### Usage
+
+Logpipe can be called in one of four ways:
+
+    Usage: logpipe [options]
+
+    Options:
+        -h,   --help      Display this help and exit
+        -m,   --move      Prepare raw files for processing
+        -p,   --process   Execute actions
+        -u,   --upload    Upload cooked files to Amazon S3
+
+An example schedule consists of executing logpipe via cron every 10 minutes:
+
+    */10 * * * * /path/to/logpipe --move
+    */20 * * * * /path/to/logpipe --process
+    */30 * * * * /path/to/logpipe --upload
 
 # Installation
 ## Install Dependencies
 
-    sudo apt-get install s3cmd parallel
+    sudo apt-get install s3cmd parallel coreutils
 
 ## Configure
 
-Set `mnt` and `s3_bucket` in `lib/environment.sh` to your desired paths and
-then create your staging directories. You'll want your logs from your CDN
-provider to arrive in the `${stage1}` directory.
-
-    bash
-    source lib/environment.sh
-    mkdir -p "${stage1}"
-    mkdir -p "${stage2}"
-    mkdir -p "${stage3}"
-    mkdir -p "${stage4}"
-    exit
+The default installation path is `/usr/local/` but you may override this by
+defining PREFIX at install time. At a minimum, you must define `S3_URI` and
+`STAGE_PREFIX` to `install.sh`.
 
 ## Run installer
 
-The default installation path is `/usr/local/`
-
-    sudo ./install.sh
+    sudo \
+        PREFIX=/custom/path       \
+        S3_URI=s3://your_bucket   \
+        STAGE_PREFIX=/srv/logpipe \
+        ./install.sh
