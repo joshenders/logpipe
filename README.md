@@ -68,7 +68,7 @@ An example schedule consists of executing logpipe via cron every 10 minutes:
 
 The default installation path is `/usr/local/` but you may override this by
 defining PREFIX at install time. At a minimum, you must define `S3_URI` and
-`STAGE_PREFIX` to `install.sh`.
+`STAGE_PREFIX` to `INSTALL.sh`.
 
 ## Run installer
 
@@ -76,4 +76,4 @@ defining PREFIX at install time. At a minimum, you must define `S3_URI` and
         PREFIX=/custom/path       \
         S3_URI=s3://your_bucket   \
         STAGE_PREFIX=/srv/logpipe \
-        ./install.sh
+        ./INSTALL.sh

@@ -10,7 +10,7 @@ S3_URI="${S3_URI:?'S3_URI has not been set'}"
 # Files to be processed should be created in ${STAGE_PREFIX}/stage1-incoming
 STAGE_PREFIX="${STAGE_PREFIX:?'STAGE_PREFIX has not been set'}"
 
-# Install to custom location with PREFIX=/my/custom/path ./install.sh
+# Install to custom location with PREFIX=/my/custom/path ./INSTALL.sh
 PREFIX="${PREFIX:-/usr/local}"
 
 # --- User configuration above this line ---
