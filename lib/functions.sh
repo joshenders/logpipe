@@ -140,7 +140,7 @@ function upload() {
                 --reduced-redundancy \
                 --quiet \
                 put "${file}" "${S3_URI}" && \
-                    rm "${file}"
+                    rm -- "${file}"
         fi
     done
 }

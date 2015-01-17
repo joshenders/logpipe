@@ -12,8 +12,7 @@ function main() {
 
     # skip if file is open
     if [[ "${is_open}" != 0 ]]; then
-        # Filtering commands would typically go here
-        rm "${file}"
+        rm -- "${file}"
     fi
 }
 

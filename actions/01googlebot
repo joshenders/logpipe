@@ -31,7 +31,7 @@ function main() {
 
         # Remove stage4_file if empty (20 byte gzip header)
         if [[ "${size}" == 20 ]]; then
-            rm "${stage4_file}"
+            rm -- "${stage4_file}"
         fi
     fi
 }
