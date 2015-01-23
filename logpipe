@@ -2,15 +2,11 @@
 
 # Logpipe is a utility for managing a batch processing pipeline.
 #
-# With repeated execution via cron, files flow through the following 4-stages:
+# With repeated execution via cron, files flow through the following 3-stages:
 #
 #     stage1-incoming   - incoming raw files
 #     stage2-holding    - candidates awaiting validation for stage3
-#     stage3-processing - raw files awaiting processing
-#     stage4-outgoing   - cooked files awaiting transport to S3
-#
-# Actions executed in the processing stage can be written in any language and
-# are executed using GNU parallel.
+#     stage3-outgoing   - cooked files awaiting transport to S3
 #
 # The final stage of the pipeline uploads the processed output to Amazon S3 via
 # s3cmd.
@@ -52,12 +48,8 @@ function main() {
             get_glob "${STAGE1}"
             move
         ;;
-        -p|--process)
+       -u|--upload)
             get_glob "${STAGE3}"
-            process
-        ;;
-        -u|--upload)
-            get_glob "${STAGE4}"
             upload
         ;;
         *)

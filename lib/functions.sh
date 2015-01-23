@@ -30,7 +30,6 @@ function exit_with_usage() {
 Options:
     -h,   --help      Display this help and exit
     -m,   --move      Prepare raw files for processing
-    -p,   --process   Execute actions
     -u,   --upload    Upload cooked files to Amazon S3" >&2
 
     exit 1
@@ -102,22 +101,6 @@ function move() {
             # no longer open, move to the next stage
             mv "${stage2_file}" "${STAGE3}"
         fi
-    done
-}
-
-function process() {
-    # usage: process
-
-#    local outfile='/srv/logpipe/stage3_size.csv'
-#    local timestamp="$(date --utc +%s)"
-#    local size="$(du --bytes ${STAGE3} | awk '{ print $1 }')"
-#    echo "${timestamp},${size}" >> "${outfile}"
-
-    local action=''
-    local actions=($(ls -v "${ACTION_PATH}"/[0-9]*)) # natural sort order
-
-    for action in "${actions[@]}"; do
-        parallel --gnu "${action} '{}'" ::: "${GLOB[@]}"
     done
 }
 
