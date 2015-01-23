@@ -74,6 +74,6 @@ defining PREFIX at install time. At a minimum, you must define `S3_URI` and
 
     sudo \
         PREFIX=/custom/path       \
-        S3_URI=s3://your_bucket   \
+        S3_URI=s3://your_bucket/  \
         STAGE_PREFIX=/srv/logpipe \
         ./INSTALL.sh

@@ -4,7 +4,7 @@ PROGNAME='logpipe'
 
 # --- User configuration below this line ---
 
-# Must conform to s3://BUCKET
+# Must conform to s3://BUCKET/ (don't forget the trailing slash)
 S3_URI="${S3_URI:?'S3_URI has not been set'}"
 
 # Files to be processed should be created in ${STAGE_PREFIX}/stage1-incoming
