@@ -46,8 +46,3 @@ sed --in-place --expression="s!__LIB_PATH__!${LIB_PATH}!g" "${SBIN_PATH}/${PROGN
 # environment.sh
 sed --in-place --expression="s!__STAGE_PREFIX__!${STAGE_PREFIX}!g" "${LIB_PATH}/environment.sh"
 sed --in-place --expression="s!__S3_URI__!${S3_URI}!g" "${LIB_PATH}/environment.sh"
-
-# actions/
-for file in "${ACTION_PATH}"/*; do
-    sed --in-place --expression="s!__LIB_PATH__!${LIB_PATH}!g" "${file}"
-done
