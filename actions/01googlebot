@@ -24,7 +24,7 @@ function main() {
         # "unexpected end of file" warnings for files with no matching lines
 
         zgrep --no-messages 2>/dev/null '^66\.249' "${file}" | \
-            grep --no-messages 'Google' 2>/dev/null | \
+            grep --no-messages 'Googlebot' 2>/dev/null | \
                 gzip --quiet 2>/dev/null > "${stage4_file}"
 
         local size="$(stat --printf='%s' ${stage4_file})"
