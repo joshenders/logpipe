@@ -36,7 +36,7 @@ source "${LIB_PATH}/environment.sh"
 source "${LIB_PATH}/functions.sh"
 
 # Export functions to child shells (mainly used by process substitution)
-for func in $(declare -f | awk '/^[a-z]/ { print $1 }'); do
+for func in $(declare -f | awk '/^[a-z]+\ \(\)/ { print $1 }'); do
     export -f "${func}"
 done
 
